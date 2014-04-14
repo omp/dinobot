@@ -55,6 +55,27 @@ module Dinobot
 
     def parse_line(str)
       out str.sub('PING', 'PONG') if str =~ /^PING /
+
+      if str =~ /(\S+) PRIVMSG (\S+) :(.*)/
+        user, channel, message = str.scan(/(\S+) PRIVMSG (\S+) :(.*)/).first
+
+        if @modules.has_key?(message.split.first.sub(/^#{Regexp.escape(@trigger)}/, '').downcase.intern)
+          ret = @modules[message.split.first.sub(/^#{Regexp.escape(@trigger)}/, '').downcase.intern].call(user, channel, message)
+
+          exec_commands(ret)
+        end
+      end
+    end
+
+    def exec_commands(commands)
+      commands.each do |command|
+        case command.first
+        when :say
+          send(*command) if command.length == 3
+        when :join, :part
+          send(*command) if command.length == 2
+        end
+      end
     end
 
     def out(str)
@@ -79,6 +100,17 @@ module Dinobot
       @channels.delete(channel)
 
       out "PART #{channel}"
+    end
+
+    def load_module(mod)
+      file = Dir.entries(File.dirname(__FILE__)).find { |x| x == mod.to_s.downcase + ".rb" }
+
+      if file
+        puts "== Loading #{mod}."
+
+        load file
+        @modules[mod.downcase] = eval("Dinobot::#{mod}").new
+      end
     end
   end
 end
