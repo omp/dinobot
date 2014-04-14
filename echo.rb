@@ -8,8 +8,8 @@ module Dinobot
       @commands << :echo
     end
 
-    def echo(user, channel, message)
-      [[:say, channel, message]]
+    def echo(user, channel, argument)
+      [[:say, channel, argument]]
     end
   end
 end

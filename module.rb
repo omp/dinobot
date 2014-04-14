@@ -7,15 +7,14 @@ module Dinobot
     end
 
     def call(user, channel, message)
-      message = message.split(' ', 2).last
-      command = message.split.first
+      command, argument = message.split(' ', 3)[1..2]
 
       if @commands.include?(command.intern)
-        send(command, user, channel, message)
+        send(command, user, channel, argument)
       end
     end
 
-    def commands(user, channel, message)
+    def commands(user, channel, argument)
       [[:say, channel, "Commands: #{@commands.sort.join(' ')}"]]
     end
   end
