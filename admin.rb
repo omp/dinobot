@@ -5,7 +5,7 @@ module Dinobot
     def initialize
       super
 
-      @commands << :join << :part
+      @commands << :join << :part << :listadmins << :load << :unload
 
       @admins = Array.new
     end
@@ -29,6 +29,22 @@ module Dinobot
 
     def part(user, channel, argument)
       [[:part, argument]] if is_admin?(user)
+    end
+
+    def listadmins(user, channel, argument)
+      [[:say, channel, @admins.join(' ')]] if is_admin?(user)
+    end
+
+    def load(user, channel, argument)
+      argument.split.map do |x|
+        [:load_module, x.intern]
+      end
+    end
+
+    def unload(user, channel, argument)
+      argument.split.map do |x|
+        [:unload_module, x.intern]
+      end
     end
   end
 end

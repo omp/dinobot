@@ -47,7 +47,7 @@ module Dinobot
         begin
           parse_line(str)
         rescue => e
-          puts "== Error parsing line. (#{e})"
+          puts "!! Error parsing line. (#{e})"
         end
       end
 
@@ -77,10 +77,12 @@ module Dinobot
 
     def exec_commands(commands)
       commands.each do |command|
+        puts "== Executing command: #{command.inspect}"
+
         case command.first
         when :say
           send(*command) if command.length == 3
-        when :join, :part
+        when :join, :part, :load_module, :unload_module
           send(*command) if command.length == 2
         end
       end
@@ -122,7 +124,7 @@ module Dinobot
 
         puts "== Loaded module: #{mod} (#{m})"
       rescue LoadError, StandardError => e
-        puts "== Failed to load module: #{mod} (#{e})"
+        puts "!! Failed to load module: #{mod} (#{e})"
       end
     end
 
@@ -131,7 +133,7 @@ module Dinobot
       puts "== Unloading module: #{mod}"
 
       unless @modules.has_key?(mod)
-        puts "== Failed to unload module: #{mod} (module not loaded)"
+        puts "!! Failed to unload module: #{mod} (module not loaded)"
         return
       end
 
