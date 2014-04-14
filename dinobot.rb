@@ -1,4 +1,5 @@
 require 'socket'
+require 'timeout'
 
 module Dinobot
   class Bot
@@ -44,10 +45,14 @@ module Dinobot
         str.chomp!
         puts "<< #{str.inspect}"
 
-        begin
-          parse_line(str)
-        rescue => e
-          puts "!! Error parsing line. (#{e})"
+        Thread.new do
+          begin
+            Timeout.timeout(30) do
+              parse_line(str)
+            end
+          rescue => e
+            puts "!! Error parsing line. (#{e})"
+          end
         end
       end
 

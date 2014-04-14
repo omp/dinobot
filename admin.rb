@@ -36,15 +36,15 @@ module Dinobot
     end
 
     def load(user, channel, argument)
-      argument.split.map do |x|
-        [:load_module, x.intern]
-      end
+      return unless is_admin?(user)
+
+      argument.split.map { |x| [:load_module, x.intern] }
     end
 
     def unload(user, channel, argument)
-      argument.split.map do |x|
-        [:unload_module, x.intern]
-      end
+      return unless is_admin?(user)
+
+      argument.split.map { |x| [:unload_module, x.intern] }
     end
   end
 end

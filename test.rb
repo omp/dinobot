@@ -5,7 +5,7 @@ module Dinobot
     def initialize
       super
 
-      @commands << :echo << :error
+      @commands << :echo << :error << :timeout
     end
 
     def echo(user, channel, argument)
@@ -14,6 +14,10 @@ module Dinobot
 
     def error(user, channel, argument)
       x
+    end
+
+    def timeout(user, channel, argument)
+      sleep 60
     end
   end
 end
