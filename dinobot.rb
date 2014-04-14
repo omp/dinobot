@@ -68,7 +68,9 @@ module Dinobot
         mod = message.split.first.downcase.intern
 
         if @modules.has_key?(mod)
-          exec_commands(@modules[mod].call(user, channel, message))
+          commands = @modules[mod].call(user, channel, message)
+
+          exec_commands(commands) unless commands.nil?
         end
       end
     end
