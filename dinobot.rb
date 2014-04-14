@@ -123,5 +123,22 @@ module Dinobot
         puts "== Failed to load module: #{mod} (#{e.message})"
       end
     end
+
+    def unload_module(mod)
+      mod = mod.downcase.intern
+      puts "== Unloading module: #{mod}"
+
+      unless @modules.has_key?(mod)
+        puts "== Failed to unload module: #{mod} (module not loaded)"
+        return
+      end
+
+      @modules.delete(mod)
+
+      Dinobot.send(
+        :remove_const,
+        Dinobot.constants.find { |x| x.downcase == mod }
+      )
+    end
   end
 end
