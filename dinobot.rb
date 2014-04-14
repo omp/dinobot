@@ -2,6 +2,9 @@ require 'socket'
 
 module Dinobot
   class Bot
+    attr_accessor :trigger
+    attr_reader :server, :port, :nick, :pass, :modules, :channels
+
     def initialize(server, port, nick, pass=nil, &block)
       @server = server
       @port = port
@@ -34,23 +37,21 @@ module Dinobot
     end
 
     def run
-      while true
-        puts "== Connecting to #{@server}:#{@port}."
-        connect
+      puts "== Connecting to #{@server}:#{@port}."
+      connect
 
-        while str = @socket.gets
-          str.chomp!
-          puts "<< " + str.inspect
+      while str = @socket.gets
+        str.chomp!
+        puts "<< #{str.inspect}"
 
-          begin
-            parse_line(str)
-          rescue
-          end
+        begin
+          parse_line(str)
+        rescue
         end
-
-        puts "== Disconnected."
-        @socket.close
       end
+
+      puts '== Disconnected.'
+      @socket.close
     end
 
     def parse_line(str)
@@ -59,14 +60,14 @@ module Dinobot
       if str =~ /(\S+) PRIVMSG (\S+) :(.*)/
         user, channel, message = str.scan(/(\S+) PRIVMSG (\S+) :(.*)/).first
 
-        if message =~ /^#{Regexp.escape(@trigger)}/
-          message.sub!(@trigger, '')
+        return unless message =~ /^#{Regexp.escape(@trigger)}/
 
-          mod = message.split.first.downcase.intern
+        message.sub!(@trigger, '')
 
-          if @modules.has_key?(mod)
-            exec_commands(@modules[mod].call(user, channel, message))
-          end
+        mod = message.split.first.downcase.intern
+
+        if @modules.has_key?(mod)
+          exec_commands(@modules[mod].call(user, channel, message))
         end
       end
     end
@@ -85,7 +86,7 @@ module Dinobot
     def out(str)
       return unless connected?
 
-      puts ">> " + str.inspect
+      puts ">> #{str.inspect}"
 
       @socket.puts str
     end
