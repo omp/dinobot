@@ -59,10 +59,14 @@ module Dinobot
       if str =~ /(\S+) PRIVMSG (\S+) :(.*)/
         user, channel, message = str.scan(/(\S+) PRIVMSG (\S+) :(.*)/).first
 
-        if @modules.has_key?(message.split.first.sub(/^#{Regexp.escape(@trigger)}/, '').downcase.intern)
-          ret = @modules[message.split.first.sub(/^#{Regexp.escape(@trigger)}/, '').downcase.intern].call(user, channel, message)
+        if message =~ /^#{Regexp.escape(@trigger)}/
+          message.sub!(@trigger, '')
 
-          exec_commands(ret)
+          mod = message.split.first.downcase.intern
+
+          if @modules.has_key?(mod)
+            exec_commands(@modules[mod].call(user, channel, message))
+          end
         end
       end
     end
