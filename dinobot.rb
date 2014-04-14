@@ -46,7 +46,8 @@ module Dinobot
 
         begin
           parse_line(str)
-        rescue
+        rescue => e
+          puts "== Error parsing line. (#{e})"
         end
       end
 
@@ -111,17 +112,15 @@ module Dinobot
       mod = mod.downcase.intern
       puts "== Loading module: #{mod}"
 
-      file = "#{mod}.rb"
-
       begin
-        load file
+        load "#{mod}.rb"
 
         m = Dinobot.const_get(Dinobot.constants.find { |x| x.downcase == mod })
         @modules[mod] = m.new
 
         puts "== Loaded module: #{mod} (#{m})"
       rescue LoadError, StandardError => e
-        puts "== Failed to load module: #{mod} (#{e.message})"
+        puts "== Failed to load module: #{mod} (#{e})"
       end
     end
 
