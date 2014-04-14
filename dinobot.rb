@@ -107,14 +107,24 @@ module Dinobot
     end
 
     def load_module(mod)
-      file = Dir.entries(File.dirname(__FILE__)).find { |x| x == mod.to_s.downcase + ".rb" }
+      mod = mod.downcase
+      puts "== Loading module: #{mod}."
 
-      if file
-        puts "== Loading #{mod}."
+      file = Dir.entries(File.dirname(__FILE__))
+        .find { |x| x == mod.to_s + ".rb" }
 
-        load file
-        @modules[mod.downcase] = eval("Dinobot::#{mod}").new
+      unless file
+        puts "== Failed to load module: #{mod} (File #{mod}.rb not found)."
+
+        return false
       end
+
+      load file
+
+      m = Dinobot.const_get(Dinobot.constants.find { |x| x.downcase == mod })
+      @modules[mod] = m.new
+
+      puts "== Loaded module: #{mod} (#{m})."
     end
   end
 end
