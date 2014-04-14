@@ -70,13 +70,33 @@ module Dinobot
 
         message.sub!(@trigger, '')
 
-        mod = message.split.first.downcase.intern
+        commands = nil
+        mt = message.split(' | ')
 
-        if @modules.has_key?(mod)
-          commands = @modules[mod].call(user, channel, message)
+        mt.each_with_index do |m, i|
+          mod = m.split.first.downcase.intern
+          next unless @modules.has_key?(mod)
 
-          exec_commands(commands) unless commands.nil?
+          if i.zero?
+            commands = @modules[mod].call(user, channel, m)
+          else
+            return unless commands.is_a?(Array)
+
+            nc = []
+
+            commands.each do |cmd|
+              if cmd.first == :say
+                nc.concat(@modules[mod].call(user, cmd[1], "#{m} #{cmd[2]}"))
+              else
+                nc << cmd
+              end
+            end
+
+            commands = nc
+          end
         end
+
+        exec_commands(commands) if commands.is_a?(Array)
       end
     end
 
