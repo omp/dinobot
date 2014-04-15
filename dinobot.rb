@@ -78,7 +78,11 @@ module Dinobot
 
     def parse_command(user, channel, command, prev=nil)
       command, remainder = command.split(' | ', 2)
-      mod = command.scan(/\A\S+/).first.downcase.intern
+      mod = command.scan(/\A\S+/).first.downcase
+
+      return unless @modules.keys.map { |x| x.to_s }.include?(mod)
+
+      mod = mod.intern
 
       if prev.nil?
         methods = @modules[mod].call(user, channel, command)

@@ -11,7 +11,7 @@ module Dinobot
     def call(user, channel, message)
       command, argument = message.split(' ', 3)[1..2]
 
-      if @commands.include?(command.intern)
+      if @commands.map { |x| x.to_s }.include?(command)
         send(command, user, channel, argument)
       end
     end
