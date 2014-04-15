@@ -38,12 +38,12 @@ module Dinobot
     end
 
     def run
-      puts "== Connecting to #{@server}:#{@port}."
+      log :info, "Connecting to #{@server}:#{@port}."
       connect
 
       while str = @socket.gets
         str.chomp!
-        puts "<< #{str.inspect}"
+        log :in, str.inspect
 
         Thread.new do
           begin
@@ -51,13 +51,13 @@ module Dinobot
               parse_line(str)
             end
           rescue => e
-            puts "!! Error parsing line. (#{e})"
+            log :error, "Error parsing line. (#{e})"
             puts e.backtrace
           end
         end
       end
 
-      puts '== Disconnected.'
+      log :info, 'Disconnected.'
       @socket.close
     end
 
@@ -101,7 +101,7 @@ module Dinobot
 
     def run_methods(methods)
       methods.each do |method|
-        puts "== Executing method: #{method.inspect}"
+        log :info, "Executing method: #{method.inspect}"
 
         case method.first
         when :say
@@ -115,7 +115,7 @@ module Dinobot
     def out(str)
       return unless connected?
 
-      puts ">> #{str.inspect}"
+      log :out, str.inspect
 
       @socket.puts str
     end
@@ -138,7 +138,7 @@ module Dinobot
 
     def load_module(mod)
       mod = mod.downcase.intern
-      puts "== Loading module: #{mod}"
+      log :info, "Loading module: #{mod}"
 
       begin
         load "#{mod}.rb"
@@ -146,18 +146,18 @@ module Dinobot
         m = Dinobot.const_get(Dinobot.constants.find { |x| x.downcase == mod })
         @modules[mod] = m.new(self)
 
-        puts "== Loaded module: #{mod} (#{m})"
+        log :info, "Loaded module: #{mod} (#{m})"
       rescue LoadError, StandardError => e
-        puts "!! Failed to load module: #{mod} (#{e})"
+        log :error, "Failed to load module: #{mod} (#{e})"
       end
     end
 
     def unload_module(mod)
       mod = mod.downcase.intern
-      puts "== Unloading module: #{mod}"
+      log :info, "Unloading module: #{mod}"
 
       unless @modules.has_key?(mod)
-        puts "!! Failed to unload module: #{mod} (module not loaded)"
+        log :error, "Failed to unload module: #{mod} (module not loaded)"
         return
       end
 
@@ -167,6 +167,19 @@ module Dinobot
         :remove_const,
         Dinobot.constants.find { |x| x.downcase == mod }
       )
+    end
+
+    def log(type, str)
+      case type
+      when :in
+        puts "\e[32m<<\e[0m #{str}"
+      when :out
+        puts "\e[36m>>\e[0m #{str}"
+      when :error
+        puts "\e[31m!!\e[0m #{str}"
+      when :info
+        puts "\e[33m==\e[0m #{str}"
+      end
     end
   end
 end
