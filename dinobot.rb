@@ -52,6 +52,7 @@ module Dinobot
             end
           rescue => e
             puts "!! Error parsing line. (#{e})"
+            puts e.backtrace
           end
         end
       end
@@ -67,50 +68,46 @@ module Dinobot
         user, channel, message = str.scan(/(\S+) PRIVMSG (\S+) :(.*)/).first
 
         return unless message =~ /^#{Regexp.escape(@trigger)}/
-
         message.sub!(@trigger, '')
 
-        commands = parse_command(user, channel, message)
+        methods = parse_command(user, channel, message)
 
-        exec_commands(commands) if commands.is_a?(Array)
+        run_methods(methods) if methods.is_a?(Array)
       end
     end
 
-    def parse_command(user, channel, message, pc=nil)
-      mod = message.split.first.downcase.intern
+    def parse_command(user, channel, command, prev=nil)
+      command, remainder = command.split(' | ', 2)
+      mod = command.scan(/\A\S+/).first.downcase.intern
 
-      m = message.split(' | ', 2)
-
-      if pc.nil?
-        commands = @modules[mod].call(user, channel, m.first)
+      if prev.nil?
+        methods = @modules[mod].call(user, channel, command)
       else
-        commands = []
+        methods = []
 
-        pc.each do |c|
-          if c.first == :say
-            commands.concat(@modules[mod].call(user, c[1], "#{m.first} #{c[2]}"))
+        prev.each do |p|
+          if p.first == :say
+            m = @modules[mod].call(user, p[1], "#{command} #{p[2]}")
+
+            methods.concat(m) if m.is_a?(Array)
           else
-            commands << c
+            methods << p
           end
         end
       end
 
-      if m.length == 2
-        parse_command(user, channel, m.last, commands)
-      else
-        commands
-      end
+      remainder ? parse_command(user, channel, remainder, methods) : methods
     end
 
-    def exec_commands(commands)
-      commands.each do |command|
-        puts "== Executing command: #{command.inspect}"
+    def run_methods(methods)
+      methods.each do |method|
+        puts "== Executing method: #{method.inspect}"
 
-        case command.first
+        case method.first
         when :say
-          send(*command) if command.length == 3
+          send(*method) if method.length == 3
         when :join, :part, :load_module, :unload_module
-          send(*command) if command.length == 2
+          send(*method) if method.length == 2
         end
       end
     end
