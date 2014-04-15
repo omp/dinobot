@@ -23,7 +23,6 @@ module Dinobot
 
     def connect
       log :info, "Connecting to #{@server}:#{@port}."
-
       @socket = TCPSocket.new(@server, @port)
 
       out "PASS #{@pass}" if @pass
@@ -52,77 +51,19 @@ module Dinobot
             end
           rescue => e
             log :error, "Error parsing line. (#{e})"
-
-            e.backtrace.each do |line|
-              puts "   #{line}"
-            end
+            log :indent, *e.backtrace
           end
         end
       end
 
-      log :info, 'Disconnected.'
       @socket.close
-    end
-
-    def parse_line(str)
-      out str.sub('PING', 'PONG') if str =~ /^PING /
-
-      if str =~ /(\S+) PRIVMSG (\S+) :(.*)/
-        user, channel, message = str.scan(/(\S+) PRIVMSG (\S+) :(.*)/).first
-
-        return unless message =~ /^#{Regexp.escape(@trigger)}/
-        message.sub!(@trigger, '')
-
-        methods = parse_command(user, channel, message)
-        run_methods(methods) if methods.is_a?(Array)
-      end
-    end
-
-    def parse_command(user, channel, command, prev=nil)
-      command, remainder = command.split(' | ', 2)
-      mod = command.scan(/\A\S+/).first.downcase
-
-      return unless @modules.keys.map { |x| x.to_s }.include?(mod)
-
-      mod = mod.intern
-
-      if prev.nil?
-        methods = @modules[mod].call(user, channel, command)
-      else
-        methods = []
-
-        prev.each do |p|
-          if p.first == :say
-            m = @modules[mod].call(user, p[1], "#{command} #{p[2]}")
-
-            methods.concat(m) if m.is_a?(Array)
-          else
-            methods << p
-          end
-        end
-      end
-
-      remainder ? parse_command(user, channel, remainder, methods) : methods
-    end
-
-    def run_methods(methods)
-      methods.each do |method|
-        log :info, "Executing method: #{method.inspect}"
-
-        case method.first
-        when :say
-          send(*method) if method.length == 3
-        when :join, :part
-          send(*method) if method.length == 2
-        end
-      end
+      log :info, 'Disconnected.'
     end
 
     def out(str)
       return unless connected?
 
       log :out, str.inspect
-
       @socket.puts str
     end
 
@@ -175,16 +116,81 @@ module Dinobot
       end
     end
 
-    def log(type, str)
+    def log(type, *lines)
+      str = lines.join("\n")
+
       case type
       when :in
-        puts "\e[32m<<\e[0m #{str}"
+        prefix = "\e[32m<<\e[0m "
       when :out
-        puts "\e[36m>>\e[0m #{str}"
+        prefix = "\e[36m>>\e[0m "
       when :error
-        puts "\e[31m!!\e[0m #{str}"
+        prefix = "\e[31m!!\e[0m "
       when :info
-        puts "\e[33m==\e[0m #{str}"
+        prefix = "\e[33m==\e[0m "
+      when :indent
+        prefix = '   '
+      else
+        raise "unknown type specified -- #{type}"
+      end
+
+      puts str.gsub(/^/, prefix)
+    end
+
+    private
+
+    def parse_line(str)
+      out str.sub('PING', 'PONG') if str =~ /^PING /
+
+      if str =~ /(\S+) PRIVMSG (\S+) :(.*)/
+        user, channel, message = str.scan(/(\S+) PRIVMSG (\S+) :(.*)/).first
+
+        return unless message.sub!(/^#{Regexp.escape(@trigger)}/, '')
+
+        methods = exec_command(user, channel, message)
+        # TODO: Check if methods is valid list of methods.
+        run_methods(methods) if methods.is_a?(Array)
+      end
+    end
+
+    def exec_command(user, channel, command, prev=nil)
+      command, remainder = command.split(' | ', 2)
+      mod = command.scan(/\A\S+/).first.downcase
+
+      return unless @modules.keys.map { |x| x.to_s }.include?(mod)
+      mod = mod.intern
+
+      if prev.nil?
+        methods = @modules[mod].call(user, channel, command)
+      else
+        methods = []
+
+        prev.each do |p|
+          if p.first == :say
+            m = @modules[mod].call(user, p[1], "#{command} #{p[2]}")
+
+            # TODO: Check if m is valid list of methods.
+            methods.concat(m) if m.is_a?(Array)
+          else
+            methods << p
+          end
+        end
+      end
+
+      remainder ? exec_command(user, channel, remainder, methods) : methods
+    end
+
+    def run_methods(methods)
+      methods.each do |method|
+        log :info, "Executing method: #{method.inspect}"
+
+        # TODO: Raise error if unknown method name or incorrect argument count.
+        case method.first
+        when :say
+          send(*method) if method.length == 3
+        when :join, :part
+          send(*method) if method.length == 2
+        end
       end
     end
   end

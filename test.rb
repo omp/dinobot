@@ -5,11 +5,24 @@ module Dinobot
     def initialize(bot)
       super
 
-      @commands << :echo << :error << :timeout << :x3 << :wrongreturn << :fooify
+      @commands << :echo << :ping << :x3 << :fooify
+      @commands << :error << :timeout << :wrongreturn
     end
 
     def echo(user, channel, argument)
       [[:say, channel, argument]]
+    end
+
+    def ping(user, channel, argument)
+      [[:say, channel, 'pong']]
+    end
+
+    def x3(user, channel, argument)
+      [[:say, channel, argument]] * 3
+    end
+
+    def fooify(user, channel, argument)
+      [[:say, channel, 'foo' + argument]]
     end
 
     def error(user, channel, argument)
@@ -20,16 +33,8 @@ module Dinobot
       sleep 60
     end
 
-    def x3(user, channel, argument)
-      [[:say, channel, argument]] * 3
-    end
-
     def wrongreturn(user, channel, argument)
       0
-    end
-
-    def fooify(user, channel, argument)
-      [[:say, channel, 'foo' + argument]]
     end
   end
 end
