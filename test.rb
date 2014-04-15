@@ -6,7 +6,7 @@ module Dinobot
       super
 
       @commands << :echo << :ping << :x3 << :fooify
-      @commands << :error << :timeout << :wrongreturn
+      @commands << :error << :timeout << :wrongreturn << :invalidmethods
     end
 
     def echo(user, channel, argument)
@@ -35,6 +35,10 @@ module Dinobot
 
     def wrongreturn(user, channel, argument)
       0
+    end
+
+    def invalidmethods(user, channel, argument)
+      [[:say, channel]]
     end
   end
 end

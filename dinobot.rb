@@ -148,8 +148,8 @@ module Dinobot
         return unless message.sub!(/^#{Regexp.escape(@trigger)}/, '')
 
         methods = exec_command(user, channel, message)
-        # TODO: Check if methods is valid list of methods.
-        run_methods(methods) if methods.is_a?(Array)
+        ensure_valid_methods(methods)
+        run_methods(methods)
       end
     end
 
@@ -163,14 +163,14 @@ module Dinobot
       if prev.nil?
         methods = @modules[mod].call(user, channel, command)
       else
+        ensure_valid_methods(prev)
         methods = []
 
         prev.each do |p|
           if p.first == :say
             m = @modules[mod].call(user, p[1], "#{command} #{p[2]}")
-
-            # TODO: Check if m is valid list of methods.
-            methods.concat(m) if m.is_a?(Array)
+            ensure_valid_methods(m)
+            methods.concat(m)
           else
             methods << p
           end
@@ -181,15 +181,25 @@ module Dinobot
     end
 
     def run_methods(methods)
-      methods.each do |method|
-        log :info, "Executing method: #{method.inspect}"
+      methods.each do |m|
+        log :info, "Executing method: #{m.inspect}"
+        send(*m)
+      end
+    end
 
-        # TODO: Raise error if unknown method name or incorrect argument count.
-        case method.first
+    def ensure_valid_methods(methods)
+      raise "method list not array -- #{methods}" unless methods.is_a?(Array)
+
+      methods.each do |m|
+        raise "method not array -- #{m}" unless m.is_a?(Array)
+
+        case m.first
         when :say
-          send(*method) if method.length == 3
+          raise "wrong number of arguments -- #{m}" unless m.length == 3
         when :join, :part
-          send(*method) if method.length == 2
+          raise "wrong number of arguments -- #{m}" unless m.length == 2
+        else
+          raise "unknown method name -- #{m}"
         end
       end
     end
