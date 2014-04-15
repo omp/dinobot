@@ -48,6 +48,8 @@ module Dinobot
       argument.split.each do |x|
         @bot.load_module x.intern
       end
+
+      nil
     end
 
     def unload(user, channel, argument)
@@ -56,6 +58,8 @@ module Dinobot
       argument.split.each do |x|
         @bot.unload_module x.intern
       end
+
+      nil
     end
 
     def listmodules(user, channel, argument)

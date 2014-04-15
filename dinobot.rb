@@ -22,6 +22,8 @@ module Dinobot
     end
 
     def connect
+      log :info, "Connecting to #{@server}:#{@port}."
+
       @socket = TCPSocket.new(@server, @port)
 
       out "PASS #{@pass}" if @pass
@@ -38,11 +40,9 @@ module Dinobot
     end
 
     def run
-      log :info, "Connecting to #{@server}:#{@port}."
-      connect
+      connect unless connected?
 
-      while str = @socket.gets
-        str.chomp!
+      while str = @socket.gets.chomp
         log :in, str.inspect
 
         Thread.new do
@@ -52,7 +52,10 @@ module Dinobot
             end
           rescue => e
             log :error, "Error parsing line. (#{e})"
-            puts e.backtrace
+
+            e.backtrace.each do |line|
+              puts "   #{line}"
+            end
           end
         end
       end
@@ -71,7 +74,6 @@ module Dinobot
         message.sub!(@trigger, '')
 
         methods = parse_command(user, channel, message)
-
         run_methods(methods) if methods.is_a?(Array)
       end
     end
@@ -160,17 +162,17 @@ module Dinobot
       mod = mod.downcase.intern
       log :info, "Unloading module: #{mod}"
 
-      unless @modules.has_key?(mod)
-        log :error, "Failed to unload module: #{mod} (module not loaded)"
-        return
+      begin
+        raise 'module not loaded' unless @modules.has_key?(mod)
+
+        @modules.delete(mod)
+        m = Dinobot.send(:remove_const,
+          Dinobot.constants.find { |x| x.downcase == mod })
+
+        log :info, "Unloaded module: #{mod} (#{m})"
+      rescue => e
+        log :error, "Failed to unload module: #{mod} (#{e})"
       end
-
-      @modules.delete(mod)
-
-      Dinobot.send(
-        :remove_const,
-        Dinobot.constants.find { |x| x.downcase == mod }
-      )
     end
 
     def log(type, str)
