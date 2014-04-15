@@ -106,7 +106,7 @@ module Dinobot
         case method.first
         when :say
           send(*method) if method.length == 3
-        when :join, :part, :load_module, :unload_module
+        when :join, :part
           send(*method) if method.length == 2
         end
       end
@@ -144,7 +144,7 @@ module Dinobot
         load "#{mod}.rb"
 
         m = Dinobot.const_get(Dinobot.constants.find { |x| x.downcase == mod })
-        @modules[mod] = m.new
+        @modules[mod] = m.new(self)
 
         puts "== Loaded module: #{mod} (#{m})"
       rescue LoadError, StandardError => e

@@ -2,7 +2,9 @@ module Dinobot
   class Module
     attr_accessor :commands
 
-    def initialize
+    def initialize(bot)
+      @bot = bot
+
       @commands = [:commands]
     end
 

@@ -2,7 +2,7 @@ require_relative 'module'
 
 module Dinobot
   class Test < Module
-    def initialize
+    def initialize(bot)
       super
 
       @commands << :echo << :error << :timeout << :x3 << :wrongreturn << :fooify

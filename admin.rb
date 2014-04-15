@@ -2,10 +2,11 @@ require_relative 'module'
 
 module Dinobot
   class Admin < Module
-    def initialize
+    def initialize(bot)
       super
 
-      @commands << :join << :part << :listadmins << :load << :unload
+      @commands << :join << :part << :load << :unload
+      @commands << :listadmins << :listmodules << :listchannels
 
       @admins = Array.new
     end
@@ -24,27 +25,49 @@ module Dinobot
     end
 
     def join(user, channel, argument)
-      [[:join, argument]] if is_admin?(user)
+      return unless is_admin?(user)
+
+      [[:join, argument.strip]]
     end
 
     def part(user, channel, argument)
-      [[:part, argument]] if is_admin?(user)
+      return unless is_admin?(user)
+
+      [[:part, argument.strip]]
     end
 
     def listadmins(user, channel, argument)
-      [[:say, channel, @admins.join(' ')]] if is_admin?(user)
+      return unless is_admin?(user)
+
+      [[:say, channel, @admins.join(' ')]]
     end
 
     def load(user, channel, argument)
       return unless is_admin?(user)
 
-      argument.split.map { |x| [:load_module, x.intern] }
+      argument.split.each do |x|
+        @bot.load_module x.intern
+      end
     end
 
     def unload(user, channel, argument)
       return unless is_admin?(user)
 
-      argument.split.map { |x| [:unload_module, x.intern] }
+      argument.split.each do |x|
+        @bot.unload_module x.intern
+      end
+    end
+
+    def listmodules(user, channel, argument)
+      return unless is_admin?(user)
+
+      [[:say, channel, "Modules: #{@bot.modules.keys.sort.join(' ')}"]]
+    end
+
+    def listchannels(user, channel, argument)
+      return unless is_admin?(user)
+
+      [[:say, channel, "Channels: #{@bot.channels.sort.join(' ')}"]]
     end
   end
 end
