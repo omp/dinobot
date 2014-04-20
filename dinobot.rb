@@ -1,6 +1,7 @@
 require 'timeout'
 
 require_relative 'irc'
+require_relative 'logger'
 
 module Dinobot
   class Bot
@@ -16,6 +17,8 @@ module Dinobot
       @trigger = '!'
 
       @irc = Dinobot::IRC.new(@server, @port, @nick, @pass)
+      @logger = Dinobot::Logger.instance
+
       @modules = Hash.new
       @channels = Array.new
 
@@ -34,7 +37,7 @@ module Dinobot
       end
 
       @irc.disconnect
-      log :info, 'Disconnected.'
+      @logger.info 'Disconnected.'
     end
 
     def say(channel, message)
@@ -55,7 +58,7 @@ module Dinobot
 
     def load_module(mod)
       mod = mod.downcase.intern
-      log :info, "Loading module: #{mod}"
+      @logger.info "Loading module: #{mod}"
 
       begin
         load "#{mod}.rb"
@@ -63,15 +66,15 @@ module Dinobot
         m = Dinobot.const_get(Dinobot.constants.find { |x| x.downcase == mod })
         @modules[mod] = m.new(self)
 
-        log :info, "Loaded module: #{mod} (#{m})"
+        @logger.info "Loaded module: #{mod} (#{m})"
       rescue LoadError, StandardError => e
-        log :error, "Failed to load module: #{mod} (#{e})"
+        @logger.error "Failed to load module: #{mod} (#{e})"
       end
     end
 
     def unload_module(mod)
       mod = mod.downcase.intern
-      log :info, "Unloading module: #{mod}"
+      @logger.info "Unloading module: #{mod}"
 
       begin
         raise 'module not loaded' unless @modules.has_key?(mod)
@@ -80,31 +83,10 @@ module Dinobot
         m = Dinobot.send(:remove_const,
           Dinobot.constants.find { |x| x.downcase == mod })
 
-        log :info, "Unloaded module: #{mod} (#{m})"
+        @logger.info "Unloaded module: #{mod} (#{m})"
       rescue => e
-        log :error, "Failed to unload module: #{mod} (#{e})"
+        @logger.error "Failed to unload module: #{mod} (#{e})"
       end
-    end
-
-    def log(type, *lines)
-      str = lines.join("\n")
-
-      case type
-      when :in
-        prefix = "\e[32m<<\e[0m "
-      when :out
-        prefix = "\e[36m>>\e[0m "
-      when :error
-        prefix = "\e[31m!!\e[0m "
-      when :info
-        prefix = "\e[33m==\e[0m "
-      when :indent
-        prefix = '   '
-      else
-        raise "unknown type specified -- #{type}"
-      end
-
-      puts str.gsub(/^/, prefix)
     end
 
     private
@@ -116,8 +98,8 @@ module Dinobot
             parse_line(str.chomp)
           end
         rescue => e
-          log :error, "Error parsing line. (#{e})"
-          log :indent, *e.backtrace
+          @logger.error "Error parsing line. (#{e})"
+          @logger.indent *e.backtrace
         end
       end
     end
@@ -166,7 +148,7 @@ module Dinobot
 
     def run_methods(methods)
       methods.each do |m|
-        log :info, "Executing method: #{m.inspect}"
+        @logger.info "Executing method: #{m.inspect}"
         send(*m)
       end
     end
