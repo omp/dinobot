@@ -1,5 +1,6 @@
-require 'socket'
 require 'timeout'
+
+require_relative 'irc'
 
 module Dinobot
   class Bot
@@ -14,73 +15,42 @@ module Dinobot
 
       @trigger = '!'
 
-      @socket = nil
+      @irc = Dinobot::IRC.new(@server, @port, @nick, @pass)
       @modules = Hash.new
       @channels = Array.new
 
       instance_eval(&block) if block_given?
     end
 
-    def connect
-      log :info, "Connecting to #{@server}:#{@port}."
-      @socket = TCPSocket.new(@server, @port)
-
-      out "PASS #{@pass}" if @pass
-      out "NICK #{@nick}"
-      out "USER #{@nick} 0 * :#{@nick}"
+    def run
+      @irc.connect unless @irc.connected?
 
       @channels.each do |channel|
-        join channel
-      end
-    end
-
-    def connected?
-      !(@socket.nil? || @socket.closed?)
-    end
-
-    def run
-      connect unless connected?
-
-      while str = @socket.gets.chomp
-        log :in, str.inspect
-
-        Thread.new do
-          begin
-            Timeout.timeout(30) do
-              parse_line(str)
-            end
-          rescue => e
-            log :error, "Error parsing line. (#{e})"
-            log :indent, *e.backtrace
-          end
-        end
+        @irc.join channel
       end
 
-      @socket.close
+      while str = @irc.gets
+        parse_in_new_thread(str)
+      end
+
+      @irc.disconnect
       log :info, 'Disconnected.'
     end
 
-    def out(str)
-      return unless connected?
-
-      log :out, str.inspect
-      @socket.puts str
-    end
-
     def say(channel, message)
-      out "PRIVMSG #{channel} :#{message}"
+      @irc.privmsg(channel, message)
     end
 
     def join(channel)
       @channels << channel unless @channels.include?(channel)
 
-      out "JOIN #{channel}"
+      @irc.join(channel) if @irc.connected?
     end
 
     def part(channel)
       @channels.delete(channel)
 
-      out "PART #{channel}"
+      @irc.part(channel)
     end
 
     def load_module(mod)
@@ -139,17 +109,31 @@ module Dinobot
 
     private
 
+    def parse_in_new_thread(str)
+      Thread.new do
+        begin
+          Timeout.timeout(30) do
+            parse_line(str.chomp)
+          end
+        rescue => e
+          log :error, "Error parsing line. (#{e})"
+          log :indent, *e.backtrace
+        end
+      end
+    end
+
     def parse_line(str)
-      out str.sub('PING', 'PONG') if str =~ /^PING /
+      @irc.pong str.sub(/\APING /, 'PONG') if str =~ /\APING /
 
       if str =~ /(\S+) PRIVMSG (\S+) :(.*)/
         user, channel, message = str.scan(/(\S+) PRIVMSG (\S+) :(.*)/).first
 
         return unless message.sub!(/^#{Regexp.escape(@trigger)}/, '')
 
-        methods = exec_command(user, channel, message)
-        ensure_valid_methods(methods)
-        run_methods(methods)
+        if methods = exec_command(user, channel, message)
+          ensure_valid_methods(methods)
+          run_methods(methods)
+        end
       end
     end
 
