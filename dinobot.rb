@@ -1,7 +1,7 @@
 require 'timeout'
 
-require_relative 'irc'
-require_relative 'logger'
+require_relative 'core/irc'
+require_relative 'core/logger'
 
 module Dinobot
   class Bot
@@ -16,8 +16,8 @@ module Dinobot
 
       @trigger = '!'
 
-      @irc = Dinobot::IRC.new(@server, @port, @nick, @pass)
-      @logger = Dinobot::Logger.instance
+      @irc = Dinobot::Core::IRC.new(@server, @port, @nick, @pass)
+      @logger = Dinobot::Core::Logger.instance
 
       @modules = Hash.new
       @channels = Array.new
@@ -61,9 +61,10 @@ module Dinobot
       @logger.info "Loading module: #{mod}"
 
       begin
-        load "#{mod}.rb"
+        load "module/#{mod}.rb"
 
-        m = Dinobot.const_get(Dinobot.constants.find { |x| x.downcase == mod })
+        m = Dinobot::Module.const_get(
+          Dinobot::Module.constants.find { |x| x.downcase == mod })
         @modules[mod] = m.new(self)
 
         @logger.info "Loaded module: #{mod} (#{m})"
@@ -80,8 +81,8 @@ module Dinobot
         raise 'module not loaded' unless @modules.has_key?(mod)
 
         @modules.delete(mod)
-        m = Dinobot.send(:remove_const,
-          Dinobot.constants.find { |x| x.downcase == mod })
+        m = Dinobot::Module.send(:remove_const,
+          Dinobot::Module.constants.find { |x| x.downcase == mod })
 
         @logger.info "Unloaded module: #{mod} (#{m})"
       rescue => e
