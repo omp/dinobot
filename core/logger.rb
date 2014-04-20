@@ -5,33 +5,29 @@ module Dinobot
       @@mutex = Mutex.new
 
       def in(*lines)
-        str = lines.join("\n")
-
-        puts str.gsub(/^/, "\e[32m<<\e[0m ")
+        pout("\e[32m<<\e[0m ", *lines)
       end
 
       def out(*lines)
-        str = lines.join("\n")
-
-        puts str.gsub(/^/, "\e[36m>>\e[0m ")
-      end
-
-      def error(*lines)
-        str = lines.join("\n")
-
-        puts str.gsub(/^/, "\e[31m!!\e[0m ")
+        pout("\e[36m>>\e[0m ", *lines)
       end
 
       def info(*lines)
-        str = lines.join("\n")
+        pout("\e[33m==\e[0m ", *lines)
+      end
 
-        puts str.gsub(/^/, "\e[33m==\e[0m ")
+      def error(*lines)
+        pout("\e[31m!!\e[0m ", *lines)
       end
 
       def indent(*lines)
-        str = lines.join("\n")
+        pout('   ', *lines)
+      end
 
-        puts str.gsub(/^/, '   ')
+      private
+
+      def pout(prefix, *lines)
+        puts lines.join("\n").gsub(/^/, prefix)
       end
 
       class << self

@@ -35,6 +35,7 @@ module Dinobot
 
       def gets
         str = @socket.gets
+        str.chomp! unless str.nil?
 
         @logger.in str.inspect
 
