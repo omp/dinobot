@@ -1,8 +1,8 @@
-require_relative 'module'
+require_relative 'base'
 
 module Dinobot
   module Module
-    class Test < Module
+    class Test < Base
       def initialize(bot)
         super
 

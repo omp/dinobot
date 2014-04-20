@@ -1,6 +1,6 @@
 module Dinobot
   module Module
-    class Module
+    class Base
       attr_accessor :commands
 
       def initialize(bot)
