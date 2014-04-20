@@ -62,6 +62,10 @@ module Dinobot
       def privmsg(channel, message)
         puts "PRIVMSG #{channel} :#{message}"
       end
+
+      def quit(message)
+        puts "QUIT :#{message}"
+      end
     end
   end
 end

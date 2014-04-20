@@ -56,6 +56,10 @@ module Dinobot
       @irc.part(channel)
     end
 
+    def quit(message)
+      @irc.quit(message)
+    end
+
     def load_module(mod)
       mod = mod.downcase.intern
       @logger.info "Loading module: #{mod}"
@@ -106,7 +110,7 @@ module Dinobot
     end
 
     def parse_line(str)
-      @irc.pong str.sub(/\APING /, 'PONG') if str =~ /\APING /
+      @irc.pong str.sub(/\APING /, '') if str =~ /\APING /
 
       if str =~ /(\S+) PRIVMSG (\S+) :(.*)/
         user, channel, message = str.scan(/(\S+) PRIVMSG (\S+) :(.*)/).first
@@ -163,7 +167,7 @@ module Dinobot
         case m.first
         when :say
           raise "wrong number of arguments -- #{m}" unless m.length == 3
-        when :join, :part
+        when :join, :part, :quit
           raise "wrong number of arguments -- #{m}" unless m.length == 2
         else
           raise "unknown method name -- #{m}"

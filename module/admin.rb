@@ -6,7 +6,7 @@ module Dinobot
       def initialize(bot)
         super
 
-        @commands << :join << :part << :load << :unload
+        @commands << :join << :part << :quit << :load << :unload
         @commands << :listadmins << :listmodules << :listchannels
 
         @admins = Array.new
@@ -35,6 +35,12 @@ module Dinobot
         return unless is_admin?(user)
 
         [[:part, argument.strip]]
+      end
+
+      def quit(user, channel, argument)
+        return unless is_admin?(user)
+
+        [[:quit, argument ? argument.strip : 'Quitting.']]
       end
 
       def listadmins(user, channel, argument)
