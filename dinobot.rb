@@ -4,6 +4,7 @@ require_relative 'core/config'
 require_relative 'core/irc'
 require_relative 'core/logger'
 require_relative 'core/messageinfo'
+require_relative 'core/store'
 
 module Dinobot
   class Bot
@@ -19,6 +20,7 @@ module Dinobot
       @irc = Dinobot::Core::IRC.new(@server, @port, @nick, @pass)
       @config = Dinobot::Core::Config.instance
       @logger = Dinobot::Core::Logger.instance
+      @aliases = Dinobot::Core::Store.new('data/aliases')
 
       @modules = Hash.new
       @channels = Array.new
@@ -95,6 +97,20 @@ module Dinobot
       end
     end
 
+    def add_alias(from, to)
+      @aliases.data[:global] = Hash.new unless @aliases.data[:global]
+
+      @aliases.data[:global][from] = to
+      @aliases.save
+    end
+
+    def remove_alias(from)
+      return unless @aliases.data[:global]
+
+      @aliases.data[:global].delete(from)
+      @aliases.save
+    end
+
     private
 
     def process_in_new_thread(str)
@@ -130,6 +146,13 @@ module Dinobot
     end
 
     def exec_command(m, command)
+      # FIXME: Improve and add debug output.
+      if @aliases.data[:global]
+        @aliases.data[:global].each do |k, v|
+          command.sub!(/\A#{Regexp.escape(k)}\b/, v)
+        end
+      end
+
       command, remainder = command.split(' | ', 2)
       mod = command.scan(/\A\S+/).first.downcase
 
