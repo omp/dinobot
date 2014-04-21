@@ -35,60 +35,58 @@ module Dinobot
         @admins.include?(user.sub(/.+@/, ''))
       end
 
-      def join(user, channel, argument)
-        return unless is_admin?(user)
+      def join(m, args)
+        return unless is_admin?(m.user)
 
-        [[:join, argument.strip]]
+        m.response << [:join, args.strip]
       end
 
-      def part(user, channel, argument)
-        return unless is_admin?(user)
+      def part(m, args)
+        return unless is_admin?(m.user)
 
-        [[:part, argument.strip]]
+        m.response << [:part, args.strip]
       end
 
-      def quit(user, channel, argument)
-        return unless is_admin?(user)
+      def quit(m, args)
+        return unless is_admin?(m.user)
 
-        [[:quit, argument ? argument.strip : 'Quitting.']]
+        m.response << [:quit, args ? args.strip : 'Quitting.']
       end
 
-      def load(user, channel, argument)
-        return unless is_admin?(user)
+      def load(m, args)
+        return unless is_admin?(m.user)
 
-        argument.split.each do |x|
+        args.split.each do |x|
           @bot.load_module x.intern
         end
-
-        nil
       end
 
-      def unload(user, channel, argument)
-        return unless is_admin?(user)
+      def unload(m, args)
+        return unless is_admin?(m.user)
 
-        argument.split.each do |x|
+        args.split.each do |x|
           @bot.unload_module x.intern
         end
-
-        nil
       end
 
-      def listadmins(user, channel, argument)
-        return unless is_admin?(user)
+      def listadmins(m, args)
+        return unless is_admin?(m.user)
 
-        [[:say, channel, "Admins: #{@admins.join(' ')}"]]
+        m.response << [:say, m.channel, "Admins: #{@admins.join(' ')}"]
       end
 
-      def listmodules(user, channel, argument)
-        return unless is_admin?(user)
+      def listmodules(m, args)
+        return unless is_admin?(m.user)
 
-        [[:say, channel, "Modules: #{@bot.modules.keys.sort.join(' ')}"]]
+        m.response << [:say, m.channel,
+          "Modules: #{@bot.modules.keys.sort.join(' ')}"]
       end
 
-      def listchannels(user, channel, argument)
-        return unless is_admin?(user)
+      def listchannels(m, args)
+        return unless is_admin?(m.user)
 
-        [[:say, channel, "Channels: #{@bot.channels.sort.join(' ')}"]]
+        m.response << [:say, m.channel,
+          "Channels: #{@bot.channels.sort.join(' ')}"]
       end
     end
   end

@@ -137,22 +137,21 @@ module Dinobot
       mod = mod.intern
 
       if m.response.empty?
-        m.response = @modules[mod].call(m.user, m.channel, command)
+        @modules[mod].call(m, command)
       else
         ensure_valid_response(m.response)
-        response = []
 
-        m.response.each do |x|
+        prev = m.response
+        m.response = []
+
+        prev.each do |x|
           if x.first == :say
-            tmp = @modules[mod].call(m.user, x[1], "#{command} #{x[2]}")
-            ensure_valid_response(tmp)
-            response.concat(tmp)
+            @modules[mod].call(m, "#{command} #{x[2]}")
+            ensure_valid_response(m.response)
           else
-            response << x
+            m.response << x
           end
         end
-
-        m.response = response
       end
 
       exec_command(m, remainder) if remainder

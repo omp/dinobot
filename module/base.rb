@@ -9,16 +9,18 @@ module Dinobot
         @commands = [:commands]
       end
 
-      def call(user, channel, message)
-        command, argument = message.split(' ', 3)[1..2]
+      def call(m, command)
+        command, args = command.split(' ', 3)[1..2]
+        args ||= ''
 
-        if @commands.map { |x| x.to_s }.include?(command)
-          send(command, user, channel, argument)
-        end
+        return unless @commands.map { |x| x.to_s }.include?(command)
+
+        send(command, m, args)
       end
 
-      def commands(user, channel, argument)
-        [[:say, channel, "Commands: #{@commands.sort.join(' ')}"]]
+      def commands(m, args)
+        m.response << [:say, m.channel,
+          "Commands: #{@commands.sort.join(' ')}"]
       end
     end
   end

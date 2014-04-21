@@ -7,39 +7,37 @@ module Dinobot
         super
 
         @commands << :echo << :ping << :x3 << :fooify
-        @commands << :error << :timeout << :wrongreturn << :invalidmethods
+        @commands << :error << :timeout << :invalidresponse
       end
 
-      def echo(user, channel, argument)
-        [[:say, channel, argument]]
+      def echo(m, args)
+        m.response << [:say, m.channel, args]
       end
 
-      def ping(user, channel, argument)
-        [[:say, channel, 'pong']]
+      def ping(m, args)
+        m.response << [:say, m.channel, 'pong']
       end
 
-      def x3(user, channel, argument)
-        [[:say, channel, argument]] * 3
+      def x3(m, args)
+        3.times do
+          m.response << [:say, m.channel, args]
+        end
       end
 
-      def fooify(user, channel, argument)
-        [[:say, channel, 'foo' + argument]]
+      def fooify(m, args)
+        m.response << [:say, m.channel, "foo#{args}"]
       end
 
-      def error(user, channel, argument)
+      def error(m, args)
         x
       end
 
-      def timeout(user, channel, argument)
+      def timeout(m, args)
         sleep 60
       end
 
-      def wrongreturn(user, channel, argument)
-        0
-      end
-
-      def invalidmethods(user, channel, argument)
-        [[:say, channel]]
+      def invalidresponse(m, args)
+        m.response << [:say, m.channel]
       end
     end
   end

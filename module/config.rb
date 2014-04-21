@@ -12,23 +12,21 @@ module Dinobot
         @commands << :get << :set
       end
 
-      def get(user, channel, argument)
-        return unless @bot.modules[:admin].is_admin?(user)
+      def get(m, args)
+        return unless @bot.modules[:admin].is_admin?(m.user)
 
-        case argument
+        case args
         when 'trigger'
-          [[:say, channel, @config.data[:trigger][:global]]]
+          m.response << [:say, m.channel, @config.data[:trigger][:global]]
         when 'debug'
-          [[:say, channel, @config.data[:debug].to_s]]
-        else
-          nil
+          m.response << [:say, m.channel, @config.data[:debug].to_s]
         end
       end
 
-      def set(user, channel, argument)
-        return unless @bot.modules[:admin].is_admin?(user)
+      def set(m, args)
+        return unless @bot.modules[:admin].is_admin?(m.user)
 
-        key, val = argument.split(' ')
+        key, val = args.split(' ')
         return unless val
 
         case key
@@ -45,8 +43,6 @@ module Dinobot
             @config.save
           end
         end
-
-        nil
       end
     end
   end
