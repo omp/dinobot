@@ -14,6 +14,14 @@ module Dinobot
         @data ||= Hash.new
       end
 
+      def [](key)
+        @data[key]
+      end
+
+      def []=(key, value)
+        @data[key] = value
+      end
+
       def read
         @store.transaction(true) do
           @data = @store[:data]

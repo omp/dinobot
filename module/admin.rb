@@ -12,21 +12,21 @@ module Dinobot
         @commands << :join << :part << :quit << :load << :unload
         @commands << :listadmins << :listmodules << :listchannels
 
-        @admins = @store.data[:admins]
+        @admins = @store[:admins]
         @admins ||= Array.new
       end
 
       def add(user)
         @admins << user unless @admins.include?(user)
 
-        @store.data[:admins] = @admins
+        @store[:admins] = @admins
         @store.save
       end
 
       def remove(user)
         @admins.delete(user)
 
-        @store.data[:admins] = @admins
+        @store[:admins] = @admins
         @store.save
       end
 

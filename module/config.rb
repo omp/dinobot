@@ -17,9 +17,9 @@ module Dinobot
 
         case args
         when 'trigger'
-          m.respond [:say, m.channel, @config.data[:trigger][:global]]
+          m.respond [:say, m.channel, @config[:trigger][:global]]
         when 'debug'
-          m.respond [:say, m.channel, @config.data[:debug].to_s]
+          m.respond [:say, m.channel, @config[:debug].to_s]
         end
       end
 
@@ -31,15 +31,15 @@ module Dinobot
 
         case key
         when 'trigger'
-          @config.data[:trigger][:global] = val
+          @config[:trigger][:global] = val
           @config.save
         when 'debug'
           case val
           when 'true'
-            @config.data[:debug] = true
+            @config[:debug] = true
             @config.save
           when 'false'
-            @config.data[:debug] = false
+            @config[:debug] = false
             @config.save
           end
         end

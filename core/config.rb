@@ -20,6 +20,14 @@ module Dinobot
         end
       end
 
+      def [](key)
+        @data[key]
+      end
+
+      def []=(key, value)
+        @data[key] = value
+      end
+
       def save
         @store.save
       end

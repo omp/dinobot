@@ -98,16 +98,16 @@ module Dinobot
     end
 
     def add_alias(from, to)
-      @aliases.data[:global] = Hash.new unless @aliases.data[:global]
+      @aliases[:global] = Hash.new unless @aliases[:global]
 
-      @aliases.data[:global][from] = to
+      @aliases[:global][from] = to
       @aliases.save
     end
 
     def remove_alias(from)
-      return unless @aliases.data[:global]
+      return unless @aliases[:global]
 
-      @aliases.data[:global].delete(from)
+      @aliases[:global].delete(from)
       @aliases.save
     end
 
@@ -134,10 +134,10 @@ module Dinobot
         m = Dinobot::Core::MessageInfo.new(user, channel, message)
 
         return unless message =~
-          /\A#{Regexp.escape(@config.data[:trigger][:global])}/
+          /\A#{Regexp.escape(@config[:trigger][:global])}/
 
         command = message
-          .sub(/\A#{Regexp.escape(@config.data[:trigger][:global])}/, '')
+          .sub(/\A#{Regexp.escape(@config[:trigger][:global])}/, '')
 
         exec_command(m, command)
         process_response(m) if m.response?
@@ -146,8 +146,8 @@ module Dinobot
 
     def exec_command(m, command)
       # FIXME: Improve and add debug output.
-      if @aliases.data[:global]
-        @aliases.data[:global].each do |k, v|
+      if @aliases[:global]
+        @aliases[:global].each do |k, v|
           command.sub!(/\A#{Regexp.escape(k)}\b/, v)
         end
       end
@@ -159,11 +159,12 @@ module Dinobot
       mod = mod.intern
 
       if m.response?
-        prev = m.response
+        tmp = m.response
         m.response = []
 
-        prev.each do |x|
+        tmp.each do |x|
           if x.first == :say
+            # FIXME: Retain original channel value?
             @modules[mod].call(m, "#{command} #{x[2]}")
           else
             m.respond x
@@ -178,7 +179,7 @@ module Dinobot
 
     def process_response(m)
       m.response.each do |x|
-        @logger.info "Executing method: #{x.inspect}" if @config.data[:debug]
+        @logger.info "Executing method: #{x.inspect}" if @config[:debug]
         send(*x)
       end
     end
