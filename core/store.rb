@@ -6,6 +6,7 @@ module Dinobot
       attr_accessor :data
 
       def initialize(file)
+        Dir.mkdir(File.dirname(file)) unless Dir.exist?(File.dirname(file))
         @store = PStore.new(file, true)
 
         read

@@ -1,4 +1,5 @@
 require_relative 'base'
+require_relative '../core/store'
 
 module Dinobot
   module Module
@@ -6,18 +7,27 @@ module Dinobot
       def initialize(bot)
         super
 
+        @store = Dinobot::Core::Store.new('data/admin')
+
         @commands << :join << :part << :quit << :load << :unload
         @commands << :listadmins << :listmodules << :listchannels
 
-        @admins = Array.new
+        @admins = @store.data[:admins]
+        @admins ||= Array.new
       end
 
       def add(user)
         @admins << user unless @admins.include?(user)
+
+        @store.data[:admins] = @admins
+        @store.save
       end
 
       def remove(user)
         @admins.delete(user)
+
+        @store.data[:admins] = @admins
+        @store.save
       end
 
       def is_admin?(user)
@@ -43,12 +53,6 @@ module Dinobot
         [[:quit, argument ? argument.strip : 'Quitting.']]
       end
 
-      def listadmins(user, channel, argument)
-        return unless is_admin?(user)
-
-        [[:say, channel, @admins.join(' ')]]
-      end
-
       def load(user, channel, argument)
         return unless is_admin?(user)
 
@@ -67,6 +71,12 @@ module Dinobot
         end
 
         nil
+      end
+
+      def listadmins(user, channel, argument)
+        return unless is_admin?(user)
+
+        [[:say, channel, @admins.join(' ')]]
       end
 
       def listmodules(user, channel, argument)
