@@ -35,8 +35,8 @@ module Dinobot
         @irc.join channel
       end
 
-      while str = @irc.gets
-        process_in_new_thread(str)
+      while line = @irc.gets
+        process_line(line)
       end
 
       @irc.disconnect
@@ -113,11 +113,11 @@ module Dinobot
 
     private
 
-    def process_in_new_thread(str)
+    def process_line(line)
       Thread.new do
         begin
           Timeout.timeout(30) do
-            process_line(str.chomp)
+            process_line_thread(line.chomp)
           end
         rescue => e
           @logger.error "Error parsing line. (#{e})"
@@ -126,21 +126,21 @@ module Dinobot
       end
     end
 
-    def process_line(str)
-      @irc.pong str[5..-1] if str =~ /\APING /
+    def process_line_thread(line)
+      @irc.pong line[5..-1] if line =~ /\APING /
 
-      if str =~ /(\S+) PRIVMSG (\S+) :(.*)/
-        user, channel, message = str.scan(/(\S+) PRIVMSG (\S+) :(.*)/).first
+      if line =~ /\A(\S+) PRIVMSG (\S+) :(.*)/
+        user, channel, message = line.scan(/\A(\S+) PRIVMSG (\S+) :(.*)/).first
         m = Dinobot::Core::MessageInfo.new(user, channel, message)
 
-        return unless message =~ /\A#{Regexp.escape(@config.data[:trigger][:global])}/
-        command = message.sub(/\A#{Regexp.escape(@config.data[:trigger][:global])}/, '')
+        return unless message =~
+          /\A#{Regexp.escape(@config.data[:trigger][:global])}/
+
+        command = message
+          .sub(/\A#{Regexp.escape(@config.data[:trigger][:global])}/, '')
 
         exec_command(m, command)
-
-        unless m.response.empty?
-          process_response(m.response)
-        end
+        process_response(m) if m.response?
       end
     end
 
@@ -158,9 +158,7 @@ module Dinobot
       return unless @modules.keys.map { |x| x.to_s }.include?(mod)
       mod = mod.intern
 
-      if m.response.empty?
-        @modules[mod].call(m, command)
-      else
+      if m.response?
         prev = m.response
         m.response = []
 
@@ -168,16 +166,18 @@ module Dinobot
           if x.first == :say
             @modules[mod].call(m, "#{command} #{x[2]}")
           else
-            m.response << x
+            m.respond x
           end
         end
+      else
+        @modules[mod].call(m, command)
       end
 
       exec_command(m, remainder) if remainder
     end
 
-    def process_response(response)
-      response.each do |x|
+    def process_response(m)
+      m.response.each do |x|
         @logger.info "Executing method: #{x.inspect}" if @config.data[:debug]
         send(*x)
       end

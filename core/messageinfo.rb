@@ -11,8 +11,6 @@ module Dinobot
       end
 
       def respond(arr)
-        raise "response not array -- #{arr}" unless arr.is_a?(Array)
-
         case arr.first
         when :say
           raise "wrong number of arguments -- #{arr}" unless arr.length == 3
@@ -23,6 +21,10 @@ module Dinobot
         end
 
         @response << arr
+      end
+
+      def response?
+        !@response.empty?
       end
     end
   end
