@@ -17,9 +17,9 @@ module Dinobot
 
         case args
         when 'trigger'
-          m.response << [:say, m.channel, @config.data[:trigger][:global]]
+          m.respond [:say, m.channel, @config.data[:trigger][:global]]
         when 'debug'
-          m.response << [:say, m.channel, @config.data[:debug].to_s]
+          m.respond [:say, m.channel, @config.data[:debug].to_s]
         end
       end
 

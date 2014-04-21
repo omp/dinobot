@@ -139,7 +139,6 @@ module Dinobot
         exec_command(m, command)
 
         unless m.response.empty?
-          ensure_valid_response(m.response)
           process_response(m.response)
         end
       end
@@ -162,15 +161,12 @@ module Dinobot
       if m.response.empty?
         @modules[mod].call(m, command)
       else
-        ensure_valid_response(m.response)
-
         prev = m.response
         m.response = []
 
         prev.each do |x|
           if x.first == :say
             @modules[mod].call(m, "#{command} #{x[2]}")
-            ensure_valid_response(m.response)
           else
             m.response << x
           end
@@ -184,23 +180,6 @@ module Dinobot
       response.each do |x|
         @logger.info "Executing method: #{x.inspect}" if @config.data[:debug]
         send(*x)
-      end
-    end
-
-    def ensure_valid_response(response)
-      raise "method list not array -- #{response}" unless response.is_a?(Array)
-
-      response.each do |x|
-        raise "method not array -- #{x}" unless x.is_a?(Array)
-
-        case x.first
-        when :say
-          raise "wrong number of arguments -- #{x}" unless x.length == 3
-        when :join, :part, :quit
-          raise "wrong number of arguments -- #{x}" unless x.length == 2
-        else
-          raise "unknown method name -- #{x}"
-        end
       end
     end
   end

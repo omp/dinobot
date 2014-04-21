@@ -38,19 +38,19 @@ module Dinobot
       def join(m, args)
         return unless is_admin?(m.user)
 
-        m.response << [:join, args.strip]
+        m.respond [:join, args.strip]
       end
 
       def part(m, args)
         return unless is_admin?(m.user)
 
-        m.response << [:part, args.strip]
+        m.respond [:part, args.strip]
       end
 
       def quit(m, args)
         return unless is_admin?(m.user)
 
-        m.response << [:quit, args ? args.strip : 'Quitting.']
+        m.respond [:quit, args ? args.strip : 'Quitting.']
       end
 
       def load(m, args)
@@ -72,20 +72,20 @@ module Dinobot
       def listadmins(m, args)
         return unless is_admin?(m.user)
 
-        m.response << [:say, m.channel, "Admins: #{@admins.join(' ')}"]
+        m.respond [:say, m.channel, "Admins: #{@admins.join(' ')}"]
       end
 
       def listmodules(m, args)
         return unless is_admin?(m.user)
 
-        m.response << [:say, m.channel,
+        m.respond [:say, m.channel,
           "Modules: #{@bot.modules.keys.sort.join(' ')}"]
       end
 
       def listchannels(m, args)
         return unless is_admin?(m.user)
 
-        m.response << [:say, m.channel,
+        m.respond [:say, m.channel,
           "Channels: #{@bot.channels.sort.join(' ')}"]
       end
     end

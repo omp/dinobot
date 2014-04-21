@@ -19,7 +19,7 @@ module Dinobot
       end
 
       def commands(m, args)
-        m.response << [:say, m.channel,
+        m.respond [:say, m.channel,
           "Commands: #{@commands.sort.join(' ')}"]
       end
     end
