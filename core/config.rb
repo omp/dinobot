@@ -10,22 +10,17 @@ module Dinobot
 
       def initialize
         @store = Dinobot::Core::Store.new('config')
-        @data = @store.data[:data]
+        @data = @store.data
 
-        if @data.nil?
-          @data = Hash.new
-
+        if @data.empty?
           @data[:debug] = false
-
-          @data[:trigger] = Hash.new
-          @data[:trigger][:global] = '!'
+          @data[:trigger] = {global: '!'}
 
           save
         end
       end
 
       def save
-        @store.data[:data] = @data
         @store.save
       end
 
