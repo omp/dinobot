@@ -3,6 +3,7 @@ require 'timeout'
 require_relative 'core/config'
 require_relative 'core/irc'
 require_relative 'core/logger'
+require_relative 'core/messageinfo'
 
 module Dinobot
   class Bot
@@ -33,7 +34,7 @@ module Dinobot
       end
 
       while str = @irc.gets
-        parse_in_new_thread(str)
+        process_in_new_thread(str)
       end
 
       @irc.disconnect
@@ -96,11 +97,11 @@ module Dinobot
 
     private
 
-    def parse_in_new_thread(str)
+    def process_in_new_thread(str)
       Thread.new do
         begin
           Timeout.timeout(30) do
-            parse_line(str.chomp)
+            process_line(str.chomp)
           end
         rescue => e
           @logger.error "Error parsing line. (#{e})"
@@ -109,68 +110,74 @@ module Dinobot
       end
     end
 
-    def parse_line(str)
-      @irc.pong str.sub(/\APING /, '') if str =~ /\APING /
+    def process_line(str)
+      @irc.pong str[5..-1] if str =~ /\APING /
 
       if str =~ /(\S+) PRIVMSG (\S+) :(.*)/
         user, channel, message = str.scan(/(\S+) PRIVMSG (\S+) :(.*)/).first
+        m = Dinobot::Core::MessageInfo.new(user, channel, message)
 
-        return unless message.sub!(/^#{Regexp.escape(@config.data[:trigger][:global])}/, '')
+        return unless message =~ /\A#{Regexp.escape(@config.data[:trigger][:global])}/
+        command = message.sub(/\A#{Regexp.escape(@config.data[:trigger][:global])}/, '')
 
-        if methods = exec_command(user, channel, message)
-          ensure_valid_methods(methods)
-          run_methods(methods)
+        exec_command(m, command)
+
+        unless m.response.empty?
+          ensure_valid_response(m.response)
+          process_response(m.response)
         end
       end
     end
 
-    def exec_command(user, channel, command, prev=nil)
+    def exec_command(m, command)
       command, remainder = command.split(' | ', 2)
       mod = command.scan(/\A\S+/).first.downcase
 
       return unless @modules.keys.map { |x| x.to_s }.include?(mod)
       mod = mod.intern
 
-      if prev.nil?
-        methods = @modules[mod].call(user, channel, command)
+      if m.response.empty?
+        m.response = @modules[mod].call(m.user, m.channel, command)
       else
-        ensure_valid_methods(prev)
-        methods = []
+        ensure_valid_response(m.response)
+        response = []
 
-        prev.each do |p|
-          if p.first == :say
-            m = @modules[mod].call(user, p[1], "#{command} #{p[2]}")
-            ensure_valid_methods(m)
-            methods.concat(m)
+        m.response.each do |x|
+          if x.first == :say
+            tmp = @modules[mod].call(m.user, x[1], "#{command} #{x[2]}")
+            ensure_valid_response(tmp)
+            response.concat(tmp)
           else
-            methods << p
+            response << x
           end
         end
+
+        m.response = response
       end
 
-      remainder ? exec_command(user, channel, remainder, methods) : methods
+      exec_command(m, remainder) if remainder
     end
 
-    def run_methods(methods)
-      methods.each do |m|
-        @logger.info "Executing method: #{m.inspect}" if @config.data[:debug]
-        send(*m)
+    def process_response(response)
+      response.each do |x|
+        @logger.info "Executing method: #{x.inspect}" if @config.data[:debug]
+        send(*x)
       end
     end
 
-    def ensure_valid_methods(methods)
-      raise "method list not array -- #{methods}" unless methods.is_a?(Array)
+    def ensure_valid_response(response)
+      raise "method list not array -- #{response}" unless response.is_a?(Array)
 
-      methods.each do |m|
-        raise "method not array -- #{m}" unless m.is_a?(Array)
+      response.each do |x|
+        raise "method not array -- #{x}" unless x.is_a?(Array)
 
-        case m.first
+        case x.first
         when :say
-          raise "wrong number of arguments -- #{m}" unless m.length == 3
+          raise "wrong number of arguments -- #{x}" unless x.length == 3
         when :join, :part, :quit
-          raise "wrong number of arguments -- #{m}" unless m.length == 2
+          raise "wrong number of arguments -- #{x}" unless x.length == 2
         else
-          raise "unknown method name -- #{m}"
+          raise "unknown method name -- #{x}"
         end
       end
     end
