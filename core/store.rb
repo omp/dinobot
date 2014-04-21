@@ -11,7 +11,7 @@ module Dinobot
 
         read
 
-        @data ||= {}
+        @data ||= Hash.new
       end
 
       def read

@@ -1,5 +1,6 @@
 require 'timeout'
 
+require_relative 'core/config'
 require_relative 'core/irc'
 require_relative 'core/logger'
 
@@ -14,9 +15,8 @@ module Dinobot
       @nick = nick
       @pass = pass
 
-      @trigger = '!'
-
       @irc = Dinobot::Core::IRC.new(@server, @port, @nick, @pass)
+      @config = Dinobot::Core::Config.instance
       @logger = Dinobot::Core::Logger.instance
 
       @modules = Hash.new
@@ -115,7 +115,7 @@ module Dinobot
       if str =~ /(\S+) PRIVMSG (\S+) :(.*)/
         user, channel, message = str.scan(/(\S+) PRIVMSG (\S+) :(.*)/).first
 
-        return unless message.sub!(/^#{Regexp.escape(@trigger)}/, '')
+        return unless message.sub!(/^#{Regexp.escape(@config.data[:trigger][:global])}/, '')
 
         if methods = exec_command(user, channel, message)
           ensure_valid_methods(methods)
