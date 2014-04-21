@@ -153,7 +153,7 @@ module Dinobot
 
     def run_methods(methods)
       methods.each do |m|
-        @logger.info "Executing method: #{m.inspect}"
+        @logger.info "Executing method: #{m.inspect}" if @config.data[:debug]
         send(*m)
       end
     end

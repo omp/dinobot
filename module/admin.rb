@@ -76,7 +76,7 @@ module Dinobot
       def listadmins(user, channel, argument)
         return unless is_admin?(user)
 
-        [[:say, channel, @admins.join(' ')]]
+        [[:say, channel, "Admins: #{@admins.join(' ')}"]]
       end
 
       def listmodules(user, channel, argument)

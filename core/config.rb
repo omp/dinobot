@@ -15,6 +15,8 @@ module Dinobot
         if @data.nil?
           @data = Hash.new
 
+          @data[:debug] = false
+
           @data[:trigger] = Hash.new
           @data[:trigger][:global] = '!'
 
