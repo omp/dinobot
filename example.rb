@@ -14,7 +14,7 @@ bot = Dinobot::Bot.new('irc.example.org', 6667, 'dinobot') do
   @modules[:lastfm].setapikey('keyhere')
 
   add_alias 'np', 'lastfm np'
-  add_alias 'song', 'lastfm song'
+  add_alias 'song', 'lastfm np'
 end
 
 loop do
