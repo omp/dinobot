@@ -2,30 +2,35 @@ require_relative 'store'
 
 module Dinobot
   module Core
-    class Config
+    class Aliaser
       attr_accessor :data
 
       @@instance = nil
       @@mutex = Mutex.new
 
       def initialize
-        @store = Dinobot::Core::Store.new('config.db')
+        @store = Dinobot::Core::Store.new('aliaser.db')
         @data = @store.data
-
-        if @data.empty?
-          @data[:debug] = false
-          @data[:trigger] = {global: '!'}
-
-          save
-        end
       end
 
-      def [](key)
-        @data[key]
+      def add(from, to, channel=:global)
+        @data[channel] = Hash.new unless @data.key?(channel)
+        @data[channel][from] = to
+
+        save
       end
 
-      def []=(key, value)
-        @data[key] = value
+      def remove(from, channel=:global)
+        return unless data.key?(channel)
+
+        @data[channel].delete(from)
+        @data.delete(channel) if @data[channel].empty?
+
+        save
+      end
+
+      def aliases
+        @data.dup
       end
 
       def save

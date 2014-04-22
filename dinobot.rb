@@ -1,5 +1,6 @@
 require 'timeout'
 
+require_relative 'core/aliaser'
 require_relative 'core/config'
 require_relative 'core/irc'
 require_relative 'core/logger'
@@ -8,7 +9,6 @@ require_relative 'core/store'
 
 module Dinobot
   class Bot
-    attr_accessor :trigger
     attr_reader :server, :port, :nick, :pass, :modules, :channels
 
     def initialize(server, port, nick, pass=nil, &block)
@@ -17,13 +17,14 @@ module Dinobot
       @nick = nick
       @pass = pass
 
-      @irc = Dinobot::Core::IRC.new(@server, @port, @nick, @pass)
-      @config = Dinobot::Core::Config.instance
-      @logger = Dinobot::Core::Logger.instance
-      @aliases = Dinobot::Core::Store.new('data/aliases')
-
       @modules = Hash.new
       @channels = Array.new
+
+      @irc = Dinobot::Core::IRC.new(@server, @port, @nick, @pass)
+
+      @aliaser = Dinobot::Core::Aliaser.instance
+      @config = Dinobot::Core::Config.instance
+      @logger = Dinobot::Core::Logger.instance
 
       instance_eval(&block) if block_given?
     end
@@ -32,7 +33,7 @@ module Dinobot
       @irc.connect unless @irc.connected?
 
       @channels.each do |channel|
-        @irc.join channel
+        @irc.join(channel)
       end
 
       while line = @irc.gets
@@ -40,7 +41,6 @@ module Dinobot
       end
 
       @irc.disconnect
-      @logger.info 'Disconnected.'
     end
 
     def say(channel, message)
@@ -65,7 +65,6 @@ module Dinobot
 
     def load_module(mod)
       mod = mod.downcase.intern
-      @logger.info "Loading module: #{mod}"
 
       begin
         load "module/#{mod}.rb"
@@ -82,10 +81,9 @@ module Dinobot
 
     def unload_module(mod)
       mod = mod.downcase.intern
-      @logger.info "Unloading module: #{mod}"
 
       begin
-        raise 'module not loaded' unless @modules.has_key?(mod)
+        raise 'module not loaded' unless @modules.key?(mod)
 
         @modules.delete(mod)
         m = Dinobot::Module.send(:remove_const,
@@ -98,17 +96,11 @@ module Dinobot
     end
 
     def add_alias(from, to)
-      @aliases[:global] = Hash.new unless @aliases[:global]
-
-      @aliases[:global][from] = to
-      @aliases.save
+      @aliaser.add(from, to)
     end
 
     def remove_alias(from)
-      return unless @aliases[:global]
-
-      @aliases[:global].delete(from)
-      @aliases.save
+      @aliaser.remove(from)
     end
 
     private
@@ -127,7 +119,7 @@ module Dinobot
     end
 
     def process_line_thread(line)
-      @irc.pong line[5..-1] if line =~ /\APING /
+      @irc.pong(line[5..-1]) if line =~ /\APING /
 
       if line =~ /\A(\S+) PRIVMSG (\S+) :(.*)/
         user, channel, message = line.scan(/\A(\S+) PRIVMSG (\S+) :(.*)/).first
@@ -146,8 +138,8 @@ module Dinobot
 
     def exec_command(m, command)
       # FIXME: Improve and add debug output.
-      if @aliases[:global]
-        @aliases[:global].each do |k, v|
+      if @aliaser.aliases.key?(:global)
+        @aliaser.aliases[:global].each do |k, v|
           command.sub!(/\A#{Regexp.escape(k)}\b/, v)
         end
       end

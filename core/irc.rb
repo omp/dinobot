@@ -17,7 +17,6 @@ module Dinobot
 
       def connect
         @logger.info "Connecting to #{@server}:#{@port}."
-
         @socket = TCPSocket.new(@server, @port)
 
         puts "PASS #{@pass}" if @pass
@@ -26,6 +25,7 @@ module Dinobot
       end
 
       def disconnect
+        @logger.info 'Disconnecting.'
         @socket.close
       end
 
@@ -44,7 +44,6 @@ module Dinobot
 
       def puts(str)
         @logger.out str.inspect
-
         @socket.puts str
       end
 

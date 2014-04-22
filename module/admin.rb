@@ -7,7 +7,7 @@ module Dinobot
       def initialize(bot)
         super
 
-        @store = Dinobot::Core::Store.new('data/admin')
+        @store = Dinobot::Core::Store.new('data/admin.db')
 
         @commands << :join << :part << :quit << :load << :unload
         @commands << :listadmins << :listmodules << :listchannels
